@@ -1,0 +1,3 @@
+thumb.uri
+*.pyc
+__pycache__/
