@@ -103,7 +103,7 @@ ___TEMPLATE_PARAMETERS___
         "type": "NON_EMPTY"
       }
     ],
-    "help": "The Data Circle event name. Use the names from the Data Circle docs, e.g. purchase, add_to_cart, view_item, begin_checkout. Note: it is \"purchase\", not \"purchase_stape\".",
+    "help": "The Data Circle event name, as listed in the Data Circle docs, e.g. purchase, add_to_cart, view_item, begin_checkout.",
     "enablingConditions": [
       {
         "paramName": "actionType",
