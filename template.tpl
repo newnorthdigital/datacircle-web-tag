@@ -1,4 +1,4 @@
-___TERMS_OF_SERVICE___
+﻿___TERMS_OF_SERVICE___
 
 By creating or modifying this file you agree to Google Tag Manager's Community
 Template Gallery Developer Terms of Service available at
@@ -22,7 +22,7 @@ ___INFO___
   "brand": {
     "id": "brand_dummy",
     "displayName": "New North Digital",
-    "thumbnail": "data:image/png;base64,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"
+    "thumbnail": "data:image/png;base64,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\u003d"
   },
   "description": "Data Circle tracking tag. Loads the tag (page views + SPA auto-tracking) and sends custom events such as add_to_cart and purchase via the crcl command queue. Client-side, no server container needed.",
   "containerContexts": [
@@ -84,7 +84,7 @@ ___TEMPLATE_PARAMETERS___
       }
     ],
     "newRowButtonText": "Add default parameter",
-    "help": "Optional. Applied via the Data Circle \"set\" command before \"config\", so these are attached to every event (e.g. currency = EUR, user_id).",
+    "help": "Optional. Applied via the Data Circle \"set\" command before \"config\", so these are attached to every event (e.g. currency \u003d EUR, user_id).",
     "enablingConditions": [
       {
         "paramName": "actionType",
@@ -275,31 +275,79 @@ ___WEB_PERMISSIONS___
               {
                 "type": 3,
                 "mapKey": [
-                  {"type": 1, "string": "key"},
-                  {"type": 1, "string": "read"},
-                  {"type": 1, "string": "write"},
-                  {"type": 1, "string": "execute"}
+                  {
+                    "type": 1,
+                    "string": "key"
+                  },
+                  {
+                    "type": 1,
+                    "string": "read"
+                  },
+                  {
+                    "type": 1,
+                    "string": "write"
+                  },
+                  {
+                    "type": 1,
+                    "string": "execute"
+                  }
                 ],
                 "mapValue": [
-                  {"type": 1, "string": "crcl"},
-                  {"type": 8, "boolean": true},
-                  {"type": 8, "boolean": true},
-                  {"type": 8, "boolean": true}
+                  {
+                    "type": 1,
+                    "string": "crcl"
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  }
                 ]
               },
               {
                 "type": 3,
                 "mapKey": [
-                  {"type": 1, "string": "key"},
-                  {"type": 1, "string": "read"},
-                  {"type": 1, "string": "write"},
-                  {"type": 1, "string": "execute"}
+                  {
+                    "type": 1,
+                    "string": "key"
+                  },
+                  {
+                    "type": 1,
+                    "string": "read"
+                  },
+                  {
+                    "type": 1,
+                    "string": "write"
+                  },
+                  {
+                    "type": 1,
+                    "string": "execute"
+                  }
                 ],
                 "mapValue": [
-                  {"type": 1, "string": "crclEvents"},
-                  {"type": 8, "boolean": true},
-                  {"type": 8, "boolean": true},
-                  {"type": 8, "boolean": false}
+                  {
+                    "type": 1,
+                    "string": "crclEvents"
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": false
+                  }
                 ]
               }
             ]
@@ -473,3 +521,5 @@ scenarios:
 ___NOTES___
 
 Created on 2026-06-02 by New North Digital (newnorth.digital).
+
+
