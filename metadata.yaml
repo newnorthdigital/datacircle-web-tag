@@ -1,5 +1,5 @@
 homepage: "https://newnorth.nl"
 documentation: "https://github.com/newnorthdigital/datacircle-web-tag/blob/main/README.md"
 versions:
-  - sha: f09320360a6cceadc79898312332102655d79a06
+  - sha: 2f46bf14ff583adf05a7f1bf71ef068d8c03967f
     changeNotes: "Initial release."
