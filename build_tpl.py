@@ -481,5 +481,7 @@ Created on 2026-06-02 by New North Digital (newnorth.digital).
 '''
 
 TPL = TPL.replace('__THUMB__', data_uri)
-open('template.tpl', 'w').write(TPL)
-print('template.tpl written:', len(TPL), 'bytes')
+with open('template.tpl', 'wb') as f:
+    f.write(b'\xef\xbb\xbf')          # UTF-8 BOM (gallery validator expects it)
+    f.write(TPL.encode('utf-8'))
+print('template.tpl written:', len(TPL) + 3, 'bytes (incl BOM)')
