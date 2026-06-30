@@ -106,7 +106,7 @@ Per the Data Circle documentation, for a classic configuration in France (no uni
 
 ## Author
 
-Built and maintained by [New North Digital](https://newnorth.nl).
+Created and maintained by [Freek Kampen](https://freekkampen.com) at [New North Digital](https://newnorth.nl).
 
 ## License
 

@@ -472,4 +472,4 @@ scenarios:
 
 ___NOTES___
 
-Created on 2026-06-02 by New North Digital (newnorth.digital).
+Created on 2026-06-02 by Freek Kampen, New North Digital.
