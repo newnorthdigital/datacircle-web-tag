@@ -10,6 +10,7 @@ This is a **client-side** integration. Data Circle delivers events with `navigat
 - **Custom event tag**: send any Data Circle event (`purchase`, `add_to_cart`, `view_item`, `begin_checkout`, ...) with arbitrary key/value parameters.
 - **Default parameters**: attach values to every event (via the Data Circle `set` command, e.g. `currency`, `user_id`).
 - Uses a proper command queue (`createArgumentsQueue`) so events fired before the loader finishes are buffered and not lost.
+- Built-in Consent Mode gate: follows GTM Consent Mode by default, firing only once `analytics_storage` is granted and waiting for consent otherwise.
 - Optional console debug logging.
 
 ## How It Works
@@ -88,6 +89,7 @@ For `add_to_cart`, use parameters `item_id`, `item_name`, `price`, `currency`, `
 | Default parameters | config | no | Sent with every event via `set` |
 | Event name | event | yes | Data Circle event name |
 | Event parameters | event | no | Key/value parameters for the event |
+| Consent handling | both | no | Follow GTM Consent Mode (`analytics_storage`) or fire immediately |
 | Log to console | both | no | Debug logging |
 
 ## Permissions
@@ -95,6 +97,13 @@ For `add_to_cart`, use parameters `item_id`, `item_name`, `price`, `currency`, `
 - **Inject scripts**: `https://edi5on.com/*` (the Data Circle loader)
 - **Access globals**: `crcl` (read/write/execute), `crclEvents` (read/write) for the command queue
 - **Logging**: console logging in debug/preview only
+
+## Consent
+
+The **Consent handling** field controls how the tag reacts to GTM Consent Mode:
+
+- **Follow GTM Consent Mode (`analytics_storage`)** (default): the tag fires only once `analytics_storage` is granted. If consent is not yet given, it registers a consent listener and fires as soon as the visitor grants it. Consent that is never configured counts as granted, so sites without Consent Mode are unaffected.
+- **Fire immediately (I gate consent elsewhere)**: the tag runs right away. Use this when you gate consent with GTM's tag-level consent settings or a consent trigger instead.
 
 ## Privacy
 

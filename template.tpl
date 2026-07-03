@@ -143,6 +143,33 @@ ___TEMPLATE_PARAMETERS___
   },
   {
     "type": "GROUP",
+    "name": "consentGroup",
+    "displayName": "Consent",
+    "groupStyle": "ZIPPY_OPEN",
+    "subParams": [
+      {
+        "type": "SELECT",
+        "name": "consentMode",
+        "displayName": "Consent handling",
+        "macrosInSelect": false,
+        "selectItems": [
+          {
+            "value": "auto",
+            "displayValue": "Follow GTM Consent Mode (analytics_storage)"
+          },
+          {
+            "value": "off",
+            "displayValue": "Fire immediately (I gate consent elsewhere)"
+          }
+        ],
+        "simpleValueType": true,
+        "defaultValue": "auto",
+        "help": "\"Follow GTM Consent Mode\" (recommended) fires only once analytics_storage is granted, and waits for consent if it is not yet given. \"Fire immediately\" runs right away, for when you gate consent with GTM's tag-level consent settings or a consent trigger. Consent that is never configured counts as granted, so sites without Consent Mode are unaffected."
+      }
+    ]
+  },
+  {
+    "type": "GROUP",
     "name": "debugGroup",
     "displayName": "Debugging",
     "groupStyle": "ZIPPY_CLOSED",
@@ -168,6 +195,8 @@ const callInWindow = require('callInWindow');
 const getType = require('getType');
 const makeTableMap = require('makeTableMap');
 const makeString = require('makeString');
+const isConsentGranted = require('isConsentGranted');
+const addConsentListener = require('addConsentListener');
 
 const LOADER_HOST = 'https://edi5on.com/';
 const FN = 'crcl';
@@ -191,49 +220,78 @@ if (!configId) {
   return;
 }
 
-// Ensure the crcl command queue exists, mirroring the native Data Circle snippet
-// (a global crclEvents array plus a crcl() function that pushes its arguments onto it).
-// The loader replaces the array's push method to drain queued commands once it loads,
-// so pushing commands before the loader has finished loading is safe and order-preserving.
-if (getType(copyFromWindow(FN)) !== 'function') {
-  createArgumentsQueue(FN, QUEUE);
-}
-
-if (actionType === 'config') {
-  if (data.defaultParams && data.defaultParams.length > 0) {
-    const defaults = makeTableMap(data.defaultParams, 'name', 'value');
-    if (defaults) {
-      // "set" must be queued before "config"
-      callInWindow(FN, 'set', defaults);
-      debugLog('Queued set defaults');
-    }
+// Queue the crcl command(s) and load the loader. Guarded so it runs at most once,
+// even if the consent listener fires more than once.
+let hasFired = false;
+const fire = () => {
+  if (hasFired) {
+    return;
   }
-  callInWindow(FN, 'config', makeString(configId));
-  debugLog('Queued config: ' + configId);
-} else if (actionType === 'event') {
-  const eventName = data.eventName;
-  if (!eventName) {
-    debugLog('Error: Event name is required');
+  hasFired = true;
+
+  // Ensure the crcl command queue exists, mirroring the native Data Circle snippet
+  // (a global crclEvents array plus a crcl() function that pushes its arguments onto it).
+  // The loader replaces the array's push method to drain queued commands once it loads,
+  // so pushing commands before the loader has finished loading is safe and order-preserving.
+  if (getType(copyFromWindow(FN)) !== 'function') {
+    createArgumentsQueue(FN, QUEUE);
+  }
+
+  if (actionType === 'config') {
+    if (data.defaultParams && data.defaultParams.length > 0) {
+      const defaults = makeTableMap(data.defaultParams, 'name', 'value');
+      if (defaults) {
+        // "set" must be queued before "config"
+        callInWindow(FN, 'set', defaults);
+        debugLog('Queued set defaults');
+      }
+    }
+    callInWindow(FN, 'config', makeString(configId));
+    debugLog('Queued config: ' + configId);
+  } else if (actionType === 'event') {
+    const eventName = data.eventName;
+    if (!eventName) {
+      debugLog('Error: Event name is required');
+      data.gtmOnFailure();
+      return;
+    }
+    if (data.eventParams && data.eventParams.length > 0) {
+      const params = makeTableMap(data.eventParams, 'name', 'value');
+      callInWindow(FN, 'event', eventName, params ? params : {});
+    } else {
+      callInWindow(FN, 'event', eventName, {});
+    }
+    debugLog('Queued event: ' + eventName);
+  } else {
+    debugLog('Unknown tag type: ' + actionType);
     data.gtmOnFailure();
     return;
   }
-  if (data.eventParams && data.eventParams.length > 0) {
-    const params = makeTableMap(data.eventParams, 'name', 'value');
-    callInWindow(FN, 'event', eventName, params ? params : {});
-  } else {
-    callInWindow(FN, 'event', eventName, {});
-  }
-  debugLog('Queued event: ' + eventName);
-} else {
-  debugLog('Unknown tag type: ' + actionType);
-  data.gtmOnFailure();
-  return;
-}
 
-// Load the Data Circle loader. The cache token is keyed on the config ID, so the
-// script loads only once per account even when many tags reference it.
-const loaderUrl = LOADER_HOST + makeString(configId) + '.js';
-injectScript(loaderUrl, data.gtmOnSuccess, data.gtmOnFailure, 'datacircle-' + makeString(configId));
+  // Load the Data Circle loader. The cache token is keyed on the config ID, so the
+  // script loads only once per account even when many tags reference it.
+  const loaderUrl = LOADER_HOST + makeString(configId) + '.js';
+  injectScript(loaderUrl, data.gtmOnSuccess, data.gtmOnFailure, 'datacircle-' + makeString(configId));
+};
+
+// Consent gate. Data Circle stores measurement data that requires analytics_storage.
+// In the default "auto" mode the tag follows GTM Consent Mode: it fires once
+// analytics_storage is granted and waits (via a consent listener) if it is not yet.
+// Choose "Fire immediately" to gate consent at the container level instead. Note:
+// isConsentGranted returns true when consent is not configured, so sites without
+// Consent Mode keep firing.
+const consentMode = data.consentMode || 'auto';
+
+if (consentMode === 'off' || isConsentGranted('analytics_storage')) {
+  fire();
+} else {
+  debugLog('Waiting for analytics_storage consent');
+  addConsentListener('analytics_storage', (consentType, granted) => {
+    if (granted) {
+      fire();
+    }
+  });
+}
 
 
 ___WEB_PERMISSIONS___
@@ -337,6 +395,58 @@ ___WEB_PERMISSIONS___
       "isEditedByUser": true
     },
     "isRequired": true
+  },
+  {
+    "instance": {
+      "key": {
+        "publicId": "access_consent"
+      },
+      "param": [
+        {
+          "key": "consentTypes",
+          "value": {
+            "type": 2,
+            "listItem": [
+              {
+                "type": 3,
+                "mapKey": [
+                  {
+                    "type": 1,
+                    "string": "consentType"
+                  },
+                  {
+                    "type": 1,
+                    "string": "read"
+                  },
+                  {
+                    "type": 1,
+                    "string": "write"
+                  }
+                ],
+                "mapValue": [
+                  {
+                    "type": 1,
+                    "string": "analytics_storage"
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": false
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "clientAnnotations": {
+      "isEditedByUser": true
+    },
+    "isRequired": true
   }
 ]
 
@@ -349,6 +459,7 @@ scenarios:
     const mockData = {
       actionType: 'config',
       configId: '019df2aa-fd34-713a-bfce-f5118a4eb4f6',
+      consentMode: 'off',
       debug: false
     };
 
@@ -370,6 +481,7 @@ scenarios:
     const mockData = {
       actionType: 'config',
       configId: '019df2aa-fd34-713a-bfce-f5118a4eb4f6',
+      consentMode: 'off',
       debug: false
     };
 
@@ -386,6 +498,7 @@ scenarios:
 - name: Config - fails without config ID
   code: |-
     const mockData = {
+      consentMode: 'off',
       actionType: 'config',
       configId: '',
       debug: false
@@ -409,6 +522,7 @@ scenarios:
         {name: 'value', value: '10.42'},
         {name: 'currency', value: 'EUR'}
       ],
+      consentMode: 'off',
       debug: false
     };
 
@@ -426,6 +540,7 @@ scenarios:
       actionType: 'event',
       configId: '019df2aa-fd34-713a-bfce-f5118a4eb4f6',
       eventName: 'view_item',
+      consentMode: 'off',
       debug: false
     };
 
@@ -440,6 +555,7 @@ scenarios:
 - name: Event - fails without an event name
   code: |-
     const mockData = {
+      consentMode: 'off',
       actionType: 'event',
       configId: '019df2aa-fd34-713a-bfce-f5118a4eb4f6',
       eventName: '',
@@ -458,6 +574,7 @@ scenarios:
     const mockData = {
       actionType: 'config',
       configId: '019df2aa-fd34-713a-bfce-f5118a4eb4f6',
+      consentMode: 'off',
       debug: false
     };
 
@@ -468,6 +585,86 @@ scenarios:
     runCode(mockData);
 
     assertApi('gtmOnFailure').wasCalled();
+- name: Consent - auto mode fires when analytics_storage is already granted
+  code: |-
+    const mockData = {
+      actionType: 'config',
+      configId: '019df2aa-fd34-713a-bfce-f5118a4eb4f6',
+      consentMode: 'auto',
+      debug: false
+    };
+
+    mock('isConsentGranted', function(type) { return true; });
+    mock('injectScript', function(url, onSuccess, onFailure, cacheToken) {
+      onSuccess();
+    });
+
+    runCode(mockData);
+
+    assertApi('injectScript').wasCalled();
+    assertApi('addConsentListener').wasNotCalled();
+    assertApi('gtmOnSuccess').wasCalled();
+- name: Consent - auto mode waits when analytics_storage is denied
+  code: |-
+    const mockData = {
+      actionType: 'config',
+      configId: '019df2aa-fd34-713a-bfce-f5118a4eb4f6',
+      consentMode: 'auto',
+      debug: false
+    };
+
+    mock('isConsentGranted', function(type) { return false; });
+    mock('addConsentListener', function(type, callback) {});
+    mock('injectScript', function(url, onSuccess, onFailure, cacheToken) {
+      onSuccess();
+    });
+
+    runCode(mockData);
+
+    assertApi('addConsentListener').wasCalled();
+    assertApi('injectScript').wasNotCalled();
+- name: Consent - fires once after analytics_storage is granted via the listener
+  code: |-
+    const mockData = {
+      actionType: 'config',
+      configId: '019df2aa-fd34-713a-bfce-f5118a4eb4f6',
+      consentMode: 'auto',
+      debug: false
+    };
+
+    mock('isConsentGranted', function(type) { return false; });
+    mock('addConsentListener', function(type, callback) {
+      callback(type, true);
+    });
+    let injectCount = 0;
+    mock('injectScript', function(url, onSuccess, onFailure, cacheToken) {
+      injectCount++;
+      onSuccess();
+    });
+
+    runCode(mockData);
+
+    assertThat(injectCount).isEqualTo(1);
+    assertApi('gtmOnSuccess').wasCalled();
+- name: Consent - fire immediately skips the consent check
+  code: |-
+    const mockData = {
+      actionType: 'config',
+      configId: '019df2aa-fd34-713a-bfce-f5118a4eb4f6',
+      consentMode: 'off',
+      debug: false
+    };
+
+    mock('isConsentGranted', function(type) { return false; });
+    mock('injectScript', function(url, onSuccess, onFailure, cacheToken) {
+      onSuccess();
+    });
+
+    runCode(mockData);
+
+    assertApi('injectScript').wasCalled();
+    assertApi('addConsentListener').wasNotCalled();
+    assertApi('gtmOnSuccess').wasCalled();
 
 
 ___NOTES___
