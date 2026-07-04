@@ -1,5 +1,7 @@
 homepage: "https://newnorth.nl"
 documentation: "https://github.com/newnorthdigital/datacircle-web-tag/blob/main/README.md"
 versions:
+  - sha: dc0750d2ad9affc7f4ee8c3cfaa2ba201f8edbe7
+    changeNotes: 'Add built-in GTM Consent Mode gate: fires only once consent is granted, with a Fire-immediately option.'
   - sha: 2f46bf14ff583adf05a7f1bf71ef068d8c03967f
     changeNotes: "Initial release."
